@@ -10,6 +10,7 @@ import { CalendarView } from "./components/CalendarView";
 import { WorkflowBoard } from "./components/WorkflowBoard";
 import { ScheduleDialog } from "./components/ScheduleDialog";
 import { ResizableHandle } from "./components/ResizableHandle";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 
 interface Project {
     id: number;
@@ -46,6 +47,19 @@ function App(): JSX.Element {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isAssetPanelOpen, setIsAssetPanelOpen] = useState(true);
     const [resizingSide, setResizingSide] = useState<'sidebar' | 'asset' | null>(null);
+
+    // Confirmation Dialog state
+    const [confirmState, setConfirmState] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { }
+    });
 
     // Settings & Shortcuts
     const [settings, setSettings] = useState<any>({});
@@ -214,6 +228,9 @@ function App(): JSX.Element {
                     onScheduleItem={(item) => { setItemToSchedule(item); setIsScheduleDialogOpen(true); }}
                     isCollapsed={isSidebarCollapsed}
                     onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                    onConfirmDelete={(title: string, message: string, onConfirm: () => void) => {
+                        setConfirmState({ isOpen: true, title, message, onConfirm });
+                    }}
                 />
             </div>
 
@@ -339,6 +356,17 @@ function App(): JSX.Element {
                 onScheduled={() => {
                     // Force refresh logic if needed
                 }}
+            />
+
+            <ConfirmDialog
+                isOpen={confirmState.isOpen}
+                title={confirmState.title}
+                message={confirmState.message}
+                onConfirm={() => {
+                    confirmState.onConfirm();
+                    setConfirmState(prev => ({ ...prev, isOpen: false }));
+                }}
+                onCancel={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
             />
         </div>
     );

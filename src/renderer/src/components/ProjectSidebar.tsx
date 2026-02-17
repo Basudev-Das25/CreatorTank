@@ -37,9 +37,19 @@ interface ProjectSidebarProps {
     onScheduleItem: (item: any) => void;
     isCollapsed: boolean;
     onToggleCollapse: () => void;
+    onConfirmDelete: (title: string, message: string, onConfirm: () => void) => void;
 }
 
-export function ProjectSidebar({ onSelectProject, selectedProjectId, onOpenTools, currentView, onViewChange, isCollapsed, onToggleCollapse }: ProjectSidebarProps) {
+export function ProjectSidebar({
+    onSelectProject,
+    selectedProjectId,
+    onOpenTools,
+    currentView,
+    onViewChange,
+    isCollapsed,
+    onToggleCollapse,
+    onConfirmDelete
+}: ProjectSidebarProps) {
     const [projects, setProjects] = useState<Project[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [platformFilter] = useState("All");
@@ -77,11 +87,15 @@ export function ProjectSidebar({ onSelectProject, selectedProjectId, onOpenTools
 
     const handleDelete = async (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm("Delete this project and all its ideas?")) {
-            await window.api.deleteProject(id);
-            if (selectedProjectId === id) onSelectProject(null);
-            loadProjects();
-        }
+        onConfirmDelete(
+            "Delete Project",
+            "Are you sure you want to delete this project and all its associated ideas? This action cannot be undone.",
+            async () => {
+                await window.api.deleteProject(id);
+                if (selectedProjectId === id) onSelectProject(null);
+                loadProjects();
+            }
+        );
     };
 
     const filteredAndSortedProjects = projects
