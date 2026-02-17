@@ -1,0 +1,68 @@
+appId: com.creatortank.app
+productName: CreatorTank
+directories:
+  buildResources: resources
+  output: dist
+
+# Files to include in the app package
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+
+# Bundle the sql.js WASM file as an extra resource
+extraResources:
+  - from: node_modules/sql.js/dist/sql-wasm.wasm
+    to: sql-wasm.wasm
+
+# ---- WINDOWS ----
+win:
+  icon: resources/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: '${productName}-Setup-${version}.${ext}'
+
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  deleteAppDataOnUninstall: false
+  shortcutName: CreatorTank
+
+# ---- macOS ----
+mac:
+  icon: resources/icon.png
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  artifactName: '${productName}-${version}-${arch}.${ext}'
+  category: public.app-category.productivity
+
+dmg:
+  artifactName: '${productName}-${version}-${arch}.${ext}'
+
+# ---- LINUX ----
+linux:
+  icon: resources/icon.png
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  artifactName: '${productName}-${version}-${arch}.${ext}'
+  category: Utility
+  maintainer: Basudev Das
+
+appImage:
+  artifactName: '${productName}-${version}-${arch}.${ext}'
+
+deb:
+  artifactName: '${productName}-${version}-${arch}.${ext}'
