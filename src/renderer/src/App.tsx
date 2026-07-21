@@ -13,6 +13,7 @@ import { CalendarView } from './components/CalendarView';
 import { WorkflowBoard } from './components/WorkflowBoard';
 import { ScheduleDialog } from './components/ScheduleDialog';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { Teleprompter } from './components/Teleprompter';
 import { Button } from './components/ui/Button';
 import { viewTransition } from './lib/animations';
 import { SIDEBAR_COLLAPSED_WIDTH } from './lib/constants';
@@ -73,6 +74,8 @@ function App(): JSX.Element {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [itemToSchedule, setItemToSchedule] = useState<any>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isTeleprompterOpen, setIsTeleprompterOpen] = useState(false);
+  const [teleprompterContent, setTeleprompterContent] = useState('');
   const sidebarWidth = 280;
 
   const [confirmState, setConfirmState] = useState<{
@@ -188,6 +191,11 @@ function App(): JSX.Element {
         e.preventDefault();
         setIsQuickCaptureOpen((prev) => !prev);
       }
+      // Teleprompter: Ctrl+Shift+T
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        openTeleprompter();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -259,6 +267,18 @@ function App(): JSX.Element {
       navigateActive('project');
     }
   };
+
+  const openTeleprompter = useCallback(async () => {
+    // Get the current idea's script content
+    const currentIdea = activePanel === 'primary' ? primaryPanel.idea : secondaryPanel.idea;
+    if (currentIdea) {
+      const res = await (window as any).api.getScript(currentIdea.id);
+      if (res.success && res.data?.content) {
+        setTeleprompterContent(res.data.content);
+        setIsTeleprompterOpen(true);
+      }
+    }
+  }, [activePanel, primaryPanel.idea, secondaryPanel.idea]);
 
   const renderContent = (
     state: PanelState,
@@ -634,6 +654,16 @@ function App(): JSX.Element {
         }}
         onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
       />
+
+      {/* Teleprompter */}
+      <AnimatePresence>
+        {isTeleprompterOpen && (
+          <Teleprompter
+            content={teleprompterContent}
+            onClose={() => setIsTeleprompterOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

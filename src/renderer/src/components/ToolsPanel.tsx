@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings, Database, Monitor, Keyboard, Download, Upload,
   Search, X, FolderOutput, Table, ChevronRight, Sun, Moon, Laptop,
+  Bot,
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { SectionHeader } from './ui/SectionHeader';
 import { GlassPanel } from './ui/GlassPanel';
 import { panelSlideIn, overlayFade } from '../lib/animations';
+import { AISettings } from './AISettings';
 
 interface ToolsPanelProps {
   isOpen: boolean;
@@ -17,7 +19,7 @@ interface ToolsPanelProps {
   onSettingsUpdate: () => void;
 }
 
-type Tab = 'appearance' | 'shortcuts' | 'data';
+type Tab = 'appearance' | 'shortcuts' | 'ai' | 'data';
 
 export function ToolsPanel({ isOpen, onClose, currentProject, settings, onSettingsUpdate }: ToolsPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('appearance');
@@ -59,6 +61,7 @@ export function ToolsPanel({ isOpen, onClose, currentProject, settings, onSettin
   const tabs = [
     { id: 'appearance', label: 'Theme', icon: <Monitor size={16} /> },
     { id: 'shortcuts', label: 'Hotkeys', icon: <Keyboard size={16} /> },
+    { id: 'ai', label: 'AI Providers', icon: <Bot size={16} /> },
     { id: 'data', label: 'Data', icon: <Database size={16} /> },
   ];
 
@@ -205,6 +208,12 @@ export function ToolsPanel({ isOpen, onClose, currentProject, settings, onSettin
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', padding: '0 var(--space-2)' }}>
                     Combinations like <strong>Ctrl+Alt+S</strong> are supported.
                   </p>
+                </motion.div>
+              )}
+
+              {activeTab === 'ai' && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <AISettings settings={settings} onSettingsUpdate={onSettingsUpdate} />
                 </motion.div>
               )}
 
