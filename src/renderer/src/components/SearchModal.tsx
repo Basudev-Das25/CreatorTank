@@ -102,8 +102,8 @@ export function SearchModal({ isOpen, onClose, onSelectResult }: SearchModalProp
             exit={searchModalPop.exit}
             transition={searchModalPop.transition}
             style={{
-              width: '640px',
-              maxHeight: '480px',
+              width: 'min(640px, calc(100vw - 32px))',
+              maxHeight: 'min(480px, calc(100vh - 160px))',
               background: 'var(--card-bg)',
               borderRadius: 'var(--radius-2xl)',
               boxShadow: 'var(--shadow-xl)',

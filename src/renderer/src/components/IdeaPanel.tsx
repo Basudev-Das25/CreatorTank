@@ -124,27 +124,27 @@ export function IdeaPanel({
         </div>
 
         {/* New Idea Form */}
-        <GlassPanel padding="var(--space-5)" style={{ marginBottom: 'var(--space-8)' }}>
-          <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+        <GlassPanel padding="var(--space-4)" style={{ marginBottom: 'var(--space-6)' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
             <Input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Quick idea title..."
-              style={{ flex: 2 }}
+              style={{ flex: '1 1 200px', minWidth: 0 }}
             />
-            <Select value={newPriority} onChange={(e) => setNewPriority(e.target.value)} style={{ flex: 0.5 }}>
+            <Select value={newPriority} onChange={(e) => setNewPriority(e.target.value)} style={{ flex: '0 1 120px' }}>
               <option value="low">Low Priority</option>
               <option value="medium">Medium Priority</option>
               <option value="high">High Priority</option>
             </Select>
-            <Button variant="primary" onClick={handleCreate} style={{ flex: 0.5 }}>
+            <Button variant="primary" onClick={handleCreate} style={{ flex: '0 1 100px' }}>
               Add Idea
             </Button>
           </div>
         </GlassPanel>
 
         {/* Ideas Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 'var(--space-5)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(360px, 100%), 1fr))', gap: 'var(--space-4)' }}>
           {filteredIdeas.length === 0 && (
             <div style={{ gridColumn: '1/-1' }}>
               <EmptyState

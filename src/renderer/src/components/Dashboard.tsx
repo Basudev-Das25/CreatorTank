@@ -87,7 +87,7 @@ export function Dashboard({ onNavigate, onSelectProject, onSelectIdea }: Dashboa
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 'var(--space-6)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(350px, 100%), 1fr))', gap: 'var(--space-4)' }}>
           {/* Today's Focus */}
           <GlassPanel padding="var(--space-5)">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>

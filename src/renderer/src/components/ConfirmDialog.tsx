@@ -62,8 +62,8 @@ export function ConfirmDialog({
             transition={modalPop.transition}
             style={{
               background: 'var(--card-bg)',
-              width: '400px',
-              padding: 'var(--space-8)',
+              width: 'min(400px, calc(100vw - 32px))',
+              padding: 'var(--space-6)',
               borderRadius: 'var(--radius-2xl)',
               border: '1px solid var(--border)',
               boxShadow: 'var(--shadow-xl)',

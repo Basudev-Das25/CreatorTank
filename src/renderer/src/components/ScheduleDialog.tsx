@@ -85,9 +85,9 @@ export function ScheduleDialog({ isOpen, onClose, item, onScheduled }: ScheduleD
             transition={modalPop.transition}
             style={{
               background: 'var(--card-bg)',
-              padding: 'var(--space-8)',
+              padding: 'var(--space-6)',
               borderRadius: 'var(--radius-2xl)',
-              width: '420px',
+              width: 'min(420px, calc(100vw - 32px))',
               boxShadow: 'var(--shadow-xl)',
               border: '1px solid var(--border)',
               position: 'relative',

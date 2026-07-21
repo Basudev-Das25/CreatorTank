@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Bot, Check, X, ChevronRight,
+  Bot, ChevronRight,
   Zap, Shield,
 } from 'lucide-react';
 import { Button } from './ui/Button';
@@ -50,7 +50,6 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
       { key: `ai_provider_${selectedProvider}_max_tokens`, value: String(providerConfig.maxTokens) },
     ];
 
-    // Only save API key if provided
     if (providerConfig.apiKey) {
       updates.push({ key: `ai_provider_${selectedProvider}_api_key`, value: providerConfig.apiKey });
     }
@@ -67,10 +66,7 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
     setTestResult(null);
 
     try {
-      // Save config first
       await saveProviderConfig();
-
-      // Test the provider
       const response = await (window as any).api.testAIProvider(selectedProvider);
       setTestResult(response.success ? 'success' : 'error');
     } catch (err) {
@@ -95,13 +91,13 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
 
   const getProviderIcon = (id: string) => {
     switch (id) {
-      case 'native': return <Zap size={20} />;
-      case 'openai': return <span style={{ fontWeight: 700 }}>AI</span>;
-      case 'anthropic': return <span style={{ fontWeight: 700 }}>C</span>;
-      case 'gemini': return <span style={{ fontWeight: 700 }}>G</span>;
-      case 'grok': return <span style={{ fontWeight: 700 }}>X</span>;
-      case 'openrouter': return <span style={{ fontWeight: 700 }}>OR</span>;
-      default: return <Bot size={20} />;
+      case 'native': return <Zap size={18} />;
+      case 'openai': return <span style={{ fontWeight: 700, fontSize: '12px' }}>AI</span>;
+      case 'anthropic': return <span style={{ fontWeight: 700, fontSize: '12px' }}>C</span>;
+      case 'gemini': return <span style={{ fontWeight: 700, fontSize: '12px' }}>G</span>;
+      case 'grok': return <span style={{ fontWeight: 700, fontSize: '12px' }}>X</span>;
+      case 'openrouter': return <span style={{ fontWeight: 700, fontSize: '10px' }}>OR</span>;
+      default: return <Bot size={18} />;
     }
   };
 
@@ -125,31 +121,30 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 20 }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-          <Button variant="ghost" size="sm" onClick={() => setSelectedProvider(null)} icon={<ChevronRight size={16} style={{ transform: 'rotate(180deg)' }} />} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedProvider(null)} icon={<ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />} />
           <div style={{ color: 'var(--primary)' }}>{getProviderIcon(selectedProvider)}</div>
-          <h3 style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-main)' }}>
+          <h3 style={{ margin: 0, fontSize: 'var(--text-md)', fontWeight: 'var(--weight-bold)', color: 'var(--text-main)' }}>
             {provider.name}
           </h3>
           {getStatusBadge(provider.status)}
         </div>
 
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
           {provider.description}
         </p>
 
-        <GlassPanel padding="var(--space-5)">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+        <GlassPanel padding="var(--space-4)">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             {/* Enable/Disable */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-main)' }}>Enable Provider</div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Turn this provider on or off</div>
+                <div style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)', color: 'var(--text-main)' }}>Enable</div>
               </div>
               <button
                 onClick={() => setProviderConfig({ ...providerConfig, enabled: !providerConfig.enabled })}
                 style={{
-                  width: '48px',
+                  width: '44px',
                   height: '24px',
                   borderRadius: '12px',
                   background: providerConfig.enabled ? 'var(--primary)' : 'var(--border-strong)',
@@ -161,13 +156,13 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
               >
                 <div
                   style={{
-                    width: '20px',
-                    height: '20px',
+                    width: '18px',
+                    height: '18px',
                     borderRadius: '50%',
                     background: 'white',
                     position: 'absolute',
-                    top: '2px',
-                    left: providerConfig.enabled ? '26px' : '2px',
+                    top: '3px',
+                    left: providerConfig.enabled ? '23px' : '3px',
                     transition: 'var(--transition-fast)',
                   }}
                 />
@@ -184,8 +179,8 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
                   onChange={(e) => setProviderConfig({ ...providerConfig, apiKey: e.target.value })}
                   placeholder="Enter your API key..."
                 />
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 'var(--space-1)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                  <Shield size={10} /> Stored securely in your system's credential manager
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: 'var(--space-1)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Shield size={10} /> Stored securely
                 </div>
               </div>
             )}
@@ -198,12 +193,12 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
                 onChange={(e) => setProviderConfig({ ...providerConfig, model: e.target.value })}
                 style={{
                   width: '100%',
-                  padding: 'var(--space-3)',
-                  borderRadius: 'var(--radius-md)',
+                  padding: 'var(--space-2)',
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--border)',
                   background: 'var(--bg)',
                   color: 'var(--text-main)',
-                  fontSize: 'var(--text-base)',
+                  fontSize: 'var(--text-sm)',
                   cursor: 'pointer',
                 }}
               >
@@ -216,7 +211,7 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
             {/* Temperature */}
             <div>
               <SectionHeader style={{ marginBottom: 'var(--space-2)' }}>Temperature</SectionHeader>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <input
                   type="range"
                   min="0"
@@ -226,12 +221,9 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
                   onChange={(e) => setProviderConfig({ ...providerConfig, temperature: parseFloat(e.target.value) })}
                   style={{ flex: 1, accentColor: 'var(--primary)' }}
                 />
-                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-main)', minWidth: '40px', textAlign: 'center' }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-main)', minWidth: '32px', textAlign: 'center' }}>
                   {providerConfig.temperature}
                 </span>
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                Lower = more focused, Higher = more creative
               </div>
             </div>
 
@@ -247,28 +239,24 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
               />
             </div>
 
-            {/* Test Connection */}
-            <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+            {/* Test & Save */}
+            <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
               <Button
                 variant="secondary"
+                size="sm"
                 onClick={handleTestConnection}
                 disabled={testing || (provider.requiresApiKey && !providerConfig.apiKey)}
-                icon={testing ? undefined : <Zap size={14} />}
+                icon={testing ? undefined : <Zap size={12} />}
               >
-                {testing ? 'Testing...' : 'Test Connection'}
+                {testing ? 'Testing...' : 'Test'}
               </Button>
-              {testResult === 'success' && (
-                <Badge variant="success" size="sm"><Check size={10} /> Connected</Badge>
-              )}
-              {testResult === 'error' && (
-                <Badge variant="danger" size="sm"><X size={10} /> Failed</Badge>
-              )}
+              {testResult === 'success' && <Badge variant="success" size="sm">Connected</Badge>}
+              {testResult === 'error' && <Badge variant="danger" size="sm">Failed</Badge>}
+              <div style={{ flex: 1 }} />
+              <Button variant="primary" size="sm" onClick={saveProviderConfig}>
+                Save
+              </Button>
             </div>
-
-            {/* Save */}
-            <Button variant="primary" onClick={saveProviderConfig} style={{ width: '100%' }}>
-              Save Configuration
-            </Button>
           </div>
         </GlassPanel>
       </motion.div>
@@ -277,63 +265,61 @@ export function AISettings({ settings, onSettingsUpdate }: AISettingsProps) {
 
   // Provider list view
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-      <GlassPanel padding="var(--space-5)">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-          <div style={{ color: 'var(--primary)' }}><Bot size={20} /></div>
-          <SectionHeader>AI Providers</SectionHeader>
-        </div>
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
-          Configure AI providers for assisted writing features. AI is optional — the app works perfectly without it.
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+        <div style={{ color: 'var(--primary)' }}><Bot size={18} /></div>
+        <SectionHeader>AI Providers</SectionHeader>
+      </div>
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>
+        Optional — the app works perfectly without AI configured.
+      </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          {providers.map((provider) => (
-            <motion.button
-              key={provider.id}
-              whileHover={{ backgroundColor: 'var(--card-bg-hover)' }}
-              onClick={() => loadProviderConfig(provider.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-3)',
-                padding: 'var(--space-4)',
-                borderRadius: 'var(--radius-md)',
-                background: 'transparent',
-                border: '1px solid var(--border)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                width: '100%',
-                transition: 'var(--transition-fast)',
-              }}
-            >
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: 'var(--radius-sm)',
-                background: provider.status === 'active' ? 'var(--primary-light)' : 'var(--bg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: provider.status === 'active' ? 'var(--primary)' : 'var(--text-muted)',
-                flexShrink: 0,
-              }}>
-                {getProviderIcon(provider.id)}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        {providers.map((provider) => (
+          <motion.button
+            key={provider.id}
+            whileHover={{ backgroundColor: 'var(--card-bg-hover)' }}
+            onClick={() => loadProviderConfig(provider.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-3)',
+              padding: 'var(--space-3)',
+              borderRadius: 'var(--radius-md)',
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              transition: 'var(--transition-fast)',
+            }}
+          >
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-sm)',
+              background: provider.status === 'active' ? 'var(--primary-light)' : 'var(--bg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: provider.status === 'active' ? 'var(--primary)' : 'var(--text-muted)',
+              flexShrink: 0,
+            }}>
+              {getProviderIcon(provider.id)}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-main)', fontSize: 'var(--text-sm)' }}>
+                {provider.name}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-main)', fontSize: 'var(--text-base)' }}>
-                  {provider.name}
-                </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  {provider.description}
-                </div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {provider.description}
               </div>
-              {getStatusBadge(provider.status)}
-              <ChevronRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-            </motion.button>
-          ))}
-        </div>
-      </GlassPanel>
+            </div>
+            {getStatusBadge(provider.status)}
+            <ChevronRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          </motion.button>
+        ))}
+      </div>
     </div>
   );
 }
