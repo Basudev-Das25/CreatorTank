@@ -311,7 +311,13 @@ function App(): JSX.Element {
     if (state.view === 'dashboard') {
       return (
         <Dashboard
-          onNavigate={setView}
+          onNavigate={(v) => {
+            setView(v);
+            // Expand sidebar when navigating to project view
+            if (v === 'project') {
+              setIsSidebarCollapsed(false);
+            }
+          }}
           onSelectProject={(p) => {
             setProject(p);
             setIdea(null);

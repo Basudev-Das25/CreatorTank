@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Rocket, Folder, Calendar, FileText, Clock, AlertTriangle,
-  PenTool, CheckCircle, ArrowRight,
+  PenTool, CheckCircle, ArrowRight, Plus,
 } from 'lucide-react';
 import { GlassPanel } from './ui/GlassPanel';
 import { Badge } from './ui/Badge';
@@ -49,14 +49,23 @@ export function Dashboard({ onNavigate, onSelectProject, onSelectIdea }: Dashboa
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ marginBottom: 'var(--space-8)' }}
+          style={{ marginBottom: 'var(--space-8)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-4)' }}
         >
-          <h1 style={{ margin: 0, fontSize: 'var(--text-3xl)', fontWeight: 'var(--weight-extrabold)', color: 'var(--text-main)' }}>
-            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'} 👋
-          </h1>
-          <p style={{ margin: 'var(--space-2) 0 0', fontSize: 'var(--text-md)', color: 'var(--text-muted)' }}>
-            Here's what's happening with your content
-          </p>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 'var(--text-3xl)', fontWeight: 'var(--weight-extrabold)', color: 'var(--text-main)' }}>
+              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'} 👋
+            </h1>
+            <p style={{ margin: 'var(--space-2) 0 0', fontSize: 'var(--text-md)', color: 'var(--text-muted)' }}>
+              Here's what's happening with your content
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => onNavigate('project')}
+            icon={<Plus size={16} />}
+          >
+            New Project
+          </Button>
         </motion.div>
 
         {/* Stats Grid */}
