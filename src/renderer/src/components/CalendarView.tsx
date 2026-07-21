@@ -1,236 +1,216 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, RefreshCw, PanelLeft, Folder } from 'lucide-react';
+import { Button } from './ui/Button';
+import { Badge } from './ui/Badge';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
 interface Idea {
-    id: number;
-    project_id: number;
-    title: string;
-    scheduled_date: string;
-    scheduled_time?: string;
-    workflow_stage?: string;
-    project_name?: string;
-    type?: 'idea' | 'project';
+  id: number;
+  project_id: number;
+  title: string;
+  scheduled_date: string;
+  scheduled_time?: string;
+  workflow_stage?: string;
+  project_name?: string;
+  type?: 'idea' | 'project';
 }
 
 interface CalendarViewProps {
-    onOpenIdea: (idea: any) => void;
-    isSidebarCollapsed: boolean;
-    onToggleSidebar: () => void;
+  onOpenIdea: (idea: any) => void;
+  isSidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
 }
 
 export function CalendarView({ onOpenIdea, isSidebarCollapsed, onToggleSidebar }: CalendarViewProps) {
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [ideas, setIdeas] = useState<Idea[]>([]);
-    const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    const loadIdeas = async () => {
-        setLoading(true);
-        const res = await window.api.getScheduledIdeas();
-        if (res.success) {
-            setIdeas(res.data || []);
-        }
-        setLoading(false);
-    };
+  const loadIdeas = async () => {
+    setLoading(true);
+    const res = await (window as any).api.getScheduledIdeas();
+    if (res.success) setIdeas(res.data || []);
+    setLoading(false);
+  };
 
-    useEffect(() => {
-        loadIdeas();
-    }, []);
+  useEffect(() => {
+    loadIdeas();
+  }, []);
 
-    const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+  const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
-    const monthName = currentDate.toLocaleString('default', { month: 'long' });
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  const monthName = currentDate.toLocaleString('default', { month: 'long' });
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const totalDays = daysInMonth(year, month);
+  const startDay = firstDayOfMonth(year, month);
 
-    const totalDays = daysInMonth(year, month);
-    const startDay = firstDayOfMonth(year, month);
+  const calendarDays: (number | null)[] = [];
+  for (let i = 0; i < startDay; i++) calendarDays.push(null);
+  for (let i = 1; i <= totalDays; i++) calendarDays.push(i);
 
-    // Calendar Grid
-    const calendarDays: (number | null)[] = [];
-    for (let i = 0; i < startDay; i++) {
-        calendarDays.push(null); // Empty slots before first day
-    }
-    for (let i = 1; i <= totalDays; i++) {
-        calendarDays.push(i);
-    }
+  const getIdeasForDay = (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return ideas.filter((i) => i.scheduled_date === dateStr);
+  };
 
-    const getIdeasForDay = (day: number) => {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        return ideas.filter(i => i.scheduled_date === dateStr);
-    };
+  if (loading) return <LoadingSpinner />;
 
-    if (loading) return <div style={{ padding: "40px", textAlign: "center" }}>Loading Calendar...</div>;
-
-    return (
-        <div style={calendarWrapperStyle}>
-            {/* Header */}
-            <div style={calendarHeaderStyle}>
-                <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                    {isSidebarCollapsed && (
-                        <button
-                            onClick={onToggleSidebar}
-                            style={sidebarToggleBtnStyle}
-                            title="Show Sidebar (Ctrl+B)"
-                        >
-                            ☰
-                        </button>
-                    )}
-                    <h2 style={{ margin: 0 }}>{monthName} {year}</h2>
-                    <div style={navGroupStyle}>
-                        <button onClick={prevMonth} style={navBtnStyle}>←</button>
-                        <button onClick={() => setCurrentDate(new Date())} style={navBtnStyle}>Today</button>
-                        <button onClick={nextMonth} style={navBtnStyle}>→</button>
-                    </div>
-                </div>
-                <button onClick={loadIdeas} style={refreshBtnStyle}>Refresh</button>
-            </div>
-
-            {/* Days Header */}
-            <div style={daysGridHeaderStyle}>
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                    <div key={d} style={dayLabelStyle}>{d}</div>
-                ))}
-            </div>
-
-            {/* Grid */}
-            <div style={calendarGridStyle}>
-                {calendarDays.map((day, idx) => {
-                    if (day === null) return <div key={`empty-${idx}`} style={dayBoxEmptyStyle} />;
-
-                    const dayIdeas = getIdeasForDay(day);
-                    const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
-
-                    return (
-                        <div key={day} style={{ ...dayBoxStyle, background: isToday ? 'rgba(99, 102, 241, 0.1)' : "transparent" }}>
-                            <div style={{ ...dayNumberStyle, color: isToday ? "var(--primary)" : "#64748b" }}>
-                                {day}
-                                {isToday && <span style={todayIndicatorStyle}>Today</span>}
-                            </div>
-                            <div style={dayEventsStyle}>
-                                {dayIdeas.map(item => (
-                                    <div
-                                        key={`${item.type}-${item.id}`}
-                                        onClick={() => onOpenIdea(item)}
-                                        style={{
-                                            ...eventCardStyle,
-                                            borderLeft: item.type === 'project' ? "3px solid var(--primary)" : "1px solid var(--border)",
-                                            background: item.type === 'project' ? "var(--bg)" : "var(--card-bg)"
-                                        }}
-                                        title={`${item.title} - ${item.project_name || 'Project'}`}
-                                    >
-                                        <div style={{ ...eventTitleStyle, fontWeight: item.type === 'project' ? 800 : 600 }}>
-                                            {item.type === 'project' ? `📁 ${item.title}` : item.title}
-                                        </div>
-                                        {item.scheduled_time && (
-                                            <div style={eventTimeStyle}>{item.scheduled_time}</div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
+      {/* Header */}
+      <div
+        style={{
+          padding: 'var(--space-5) var(--space-8)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'var(--glass-bg)',
+          backdropFilter: 'blur(var(--glass-blur))',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        <div style={{ display: 'flex', gap: 'var(--space-5)', alignItems: 'center' }}>
+          {isSidebarCollapsed && (
+            <Button variant="ghost" size="sm" onClick={onToggleSidebar} icon={<PanelLeft size={18} />} title="Show Sidebar (Ctrl+B)" />
+          )}
+          <h2 style={{ margin: 0, fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-main)' }}>
+            {monthName} {year}
+          </h2>
+          <div style={{ display: 'flex', background: 'var(--bg-elevated)', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+            <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(year, month - 1, 1))} icon={<ChevronLeft size={16} />} />
+            <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())} style={{ padding: '6px 12px' }}>
+              Today
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(year, month + 1, 1))} icon={<ChevronRight size={16} />} />
+          </div>
         </div>
-    );
+        <Button variant="primary" size="sm" onClick={loadIdeas} icon={<RefreshCw size={14} />}>
+          Refresh
+        </Button>
+      </div>
+
+      {/* Days Header */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border)' }}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+          <div
+            key={d}
+            style={{
+              padding: 'var(--space-3)',
+              textAlign: 'center',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 'var(--weight-bold)',
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', flex: 1, overflowY: 'auto' }}>
+        <AnimatePresence>
+          {calendarDays.map((day, idx) => {
+            if (day === null) {
+              return (
+                <div
+                  key={`empty-${idx}`}
+                  style={{
+                    borderRight: '1px solid var(--border-subtle)',
+                    borderBottom: '1px solid var(--border-subtle)',
+                    padding: 'var(--space-2)',
+                    minHeight: '120px',
+                    background: 'var(--sidebar-bg)',
+                    opacity: 0.3,
+                  }}
+                />
+              );
+            }
+
+            const dayIdeas = getIdeasForDay(day);
+            const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+
+            return (
+              <motion.div
+                key={day}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: idx * 0.01 }}
+                style={{
+                  borderRight: '1px solid var(--border-subtle)',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  padding: 'var(--space-2)',
+                  minHeight: '120px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: isToday ? 'var(--primary-light)' : 'transparent',
+                  transition: 'var(--transition-fast)',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--weight-bold)',
+                    marginBottom: 'var(--space-2)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span style={{ color: isToday ? 'var(--primary)' : 'var(--text-secondary)' }}>{day}</span>
+                  {isToday && <Badge variant="primary" size="sm">Today</Badge>}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  {dayIdeas.map((item) => (
+                    <motion.div
+                      key={`${item.type}-${item.id}`}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => onOpenIdea(item)}
+                      style={{
+                        background: 'var(--card-bg)',
+                        padding: '6px 8px',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-xs)',
+                        cursor: 'pointer',
+                        fontSize: 'var(--text-xs)',
+                      }}
+                      title={`${item.title} - ${item.project_name || 'Project'}`}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 'var(--weight-semibold)',
+                          color: 'var(--text-main)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        {item.type === 'project' ? <Folder size={10} /> : null}
+                        {item.title}
+                      </div>
+                      {item.scheduled_time && (
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {item.scheduled_time}
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
 }
-
-const calendarWrapperStyle: React.CSSProperties = {
-    display: "flex", flexDirection: "column", height: "100%", background: "var(--bg)"
-};
-
-const calendarHeaderStyle: React.CSSProperties = {
-    padding: "24px 32px", display: "flex", justifyContent: "space-between",
-    alignItems: "center", background: "var(--glass)", backdropFilter: "blur(12px)",
-    borderBottom: "1px solid var(--glass-border)"
-};
-
-const navGroupStyle: React.CSSProperties = {
-    display: "flex", background: "var(--bg)", padding: "4px", borderRadius: "8px", border: "1px solid var(--border)"
-};
-
-const navBtnStyle: React.CSSProperties = {
-    padding: "6px 16px", background: "transparent", border: "none",
-    borderRadius: "6px", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem",
-    color: "var(--text-main)", transition: "var(--transition)"
-};
-
-const daysGridHeaderStyle: React.CSSProperties = {
-    display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
-    borderBottom: "1px solid var(--border)", background: "var(--bg)"
-};
-
-const dayLabelStyle: React.CSSProperties = {
-    padding: "12px", textAlign: "center", fontSize: "0.75rem",
-    fontWeight: 700, color: "#94a3b8", textTransform: "uppercase"
-};
-
-const calendarGridStyle: React.CSSProperties = {
-    display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
-    gridTemplateRows: "repeat(auto-fill, minmax(120px, 1fr))",
-    flex: 1, overflowY: "auto"
-};
-
-const dayBoxStyle: React.CSSProperties = {
-    borderRight: "1px solid var(--glass-border)", borderBottom: "1px solid var(--glass-border)",
-    padding: "8px", minHeight: "120px", display: "flex", flexDirection: "column",
-    transition: "var(--transition)"
-};
-
-const dayBoxEmptyStyle: React.CSSProperties = {
-    ...dayBoxStyle, background: "var(--sidebar-bg)", opacity: 0.5
-};
-
-const dayNumberStyle: React.CSSProperties = {
-    fontSize: "0.85rem", fontWeight: 700, marginBottom: "8px",
-    display: "flex", justifyContent: "space-between", alignItems: "center"
-};
-
-const todayIndicatorStyle: React.CSSProperties = {
-    fontSize: "0.65rem", background: "var(--primary)", color: "white",
-    padding: "2px 6px", borderRadius: "4px"
-};
-
-const dayEventsStyle: React.CSSProperties = {
-    display: "flex", flexDirection: "column", gap: "4px", flex: 1
-};
-
-const eventCardStyle: React.CSSProperties = {
-    background: "var(--card-bg)", padding: "6px 10px", borderRadius: "6px",
-    border: "1px solid var(--glass-border)", boxShadow: "var(--shadow)",
-    cursor: "pointer", fontSize: "0.75rem", transition: "var(--transition)"
-};
-
-const eventTitleStyle: React.CSSProperties = {
-    fontWeight: 600, color: "var(--text-main)", whiteSpace: "nowrap",
-    overflow: "hidden", textOverflow: "ellipsis"
-};
-
-const eventTimeStyle: React.CSSProperties = {
-    fontSize: "0.65rem", color: "#64748b", marginTop: "2px"
-};
-
-const refreshBtnStyle: React.CSSProperties = {
-    padding: "8px 16px", background: "var(--primary)", color: "white",
-    border: "none", borderRadius: "6px", fontWeight: 600, cursor: "pointer"
-};
-
-const sidebarToggleBtnStyle: React.CSSProperties = {
-    background: "var(--card-bg)",
-    border: "1px solid var(--border)",
-    borderRadius: "6px",
-    width: "36px",
-    height: "36px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontSize: "1.2rem",
-    color: "var(--text-main)",
-    boxShadow: "var(--shadow)",
-    transition: "var(--transition)",
-    marginRight: "4px"
-};

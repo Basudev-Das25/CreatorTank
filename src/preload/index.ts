@@ -69,6 +69,40 @@ const api = {
     // --- PHASE 5: CALENDAR & WORKFLOW ---
     getScheduledIdeas: (): Promise<any> => ipcRenderer.invoke("ideas:get-scheduled"),
 
+    // --- PHASE 5.5: INBOX ---
+    createInboxItem: (title: string, note?: string): Promise<any> =>
+        ipcRenderer.invoke("inbox:create", { title, note }),
+    getInboxItems: (): Promise<any> =>
+        ipcRenderer.invoke("inbox:get-all"),
+    updateInboxItem: (id: number, updates: any): Promise<any> =>
+        ipcRenderer.invoke("inbox:update", { id, ...updates }),
+    deleteInboxItem: (id: number): Promise<any> =>
+        ipcRenderer.invoke("inbox:delete", id),
+    convertInboxItem: (id: number, projectId: number): Promise<any> =>
+        ipcRenderer.invoke("inbox:convert", { id, projectId }),
+
+    // --- PHASE 5.5: CHECKLISTS ---
+    getChecklistsByIdea: (ideaId: number): Promise<any> =>
+        ipcRenderer.invoke("checklists:get-by-idea", ideaId),
+    createChecklistItem: (ideaId: number, label: string, position?: number): Promise<any> =>
+        ipcRenderer.invoke("checklists:create", { ideaId, label, position }),
+    updateChecklistItem: (id: number, updates: any): Promise<any> =>
+        ipcRenderer.invoke("checklists:update", { id, ...updates }),
+    deleteChecklistItem: (id: number): Promise<any> =>
+        ipcRenderer.invoke("checklists:delete", id),
+    initDefaultChecklists: (ideaId: number): Promise<any> =>
+        ipcRenderer.invoke("checklists:init-defaults", ideaId),
+
+    // --- PHASE 5.5: WORKSPACE NOTES ---
+    getWorkspaceNotes: (ideaId: number, tabType: string): Promise<any> =>
+        ipcRenderer.invoke("workspace-notes:get", { ideaId, tabType }),
+    saveWorkspaceNotes: (ideaId: number, tabType: string, content: string): Promise<any> =>
+        ipcRenderer.invoke("workspace-notes:save", { ideaId, tabType, content }),
+
+    // --- PHASE 5.5: DASHBOARD ---
+    getDashboardStats: (): Promise<any> =>
+        ipcRenderer.invoke("dashboard:stats"),
+
     // Settings
     getSettings: (): Promise<any> => ipcRenderer.invoke("settings:get-all"),
     updateSetting: (key: string, value: string): Promise<any> => ipcRenderer.invoke("settings:update", { key, value })

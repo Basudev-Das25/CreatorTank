@@ -1,147 +1,112 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, X } from "lucide-react";
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle, X } from 'lucide-react';
+import { Button } from './ui/Button';
+import { modalPop, overlayFade } from '../lib/animations';
 
 interface ConfirmDialogProps {
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmLabel?: string;
-    cancelLabel?: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-    variant?: 'danger' | 'warning' | 'primary';
+  isOpen: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  variant?: 'danger' | 'warning' | 'primary';
 }
 
 export function ConfirmDialog({
-    isOpen,
-    title,
-    message,
-    confirmLabel = "Confirm",
-    cancelLabel = "Cancel",
-    onConfirm,
-    onCancel,
-    variant = 'danger'
+  isOpen,
+  title,
+  message,
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  onConfirm,
+  onCancel,
+  variant = 'danger',
 }: ConfirmDialogProps) {
-    const getVariantColor = () => {
-        switch (variant) {
-            case 'danger': return 'var(--danger)';
-            case 'warning': return 'var(--warning)';
-            default: return 'var(--primary)';
-        }
-    };
+  const variantConfig: Record<string, { bg: string; color: string }> = {
+    danger: { bg: 'var(--danger-bg)', color: 'var(--danger)' },
+    warning: { bg: 'var(--warning-bg)', color: 'var(--warning)' },
+    primary: { bg: 'var(--primary-light)', color: 'var(--primary)' },
+  };
 
-    const getVariantBg = () => {
-        switch (variant) {
-            case 'danger': return 'rgba(239, 68, 68, 0.1)';
-            case 'warning': return 'rgba(245, 158, 11, 0.1)';
-            default: return 'var(--primary-light)';
-        }
-    };
+  const config = variantConfig[variant] || variantConfig.danger;
 
-    return (
-        <AnimatePresence>
-            {isOpen && (
-                <div style={overlayStyle} onClick={onCancel}>
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        style={modalStyle}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                            <div style={{
-                                background: getVariantBg(),
-                                color: getVariantColor(),
-                                padding: '12px',
-                                borderRadius: '12px',
-                                display: 'flex'
-                            }}>
-                                <AlertTriangle size={24} />
-                            </div>
-                            <button onClick={onCancel} style={closeBtnStyle}>
-                                <X size={20} />
-                            </button>
-                        </div>
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={overlayFade.initial}
+          animate={overlayFade.animate}
+          exit={overlayFade.exit}
+          transition={overlayFade.transition}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'var(--overlay-bg)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 3000,
+          }}
+          onClick={onCancel}
+        >
+          <motion.div
+            initial={modalPop.initial}
+            animate={modalPop.animate}
+            exit={modalPop.exit}
+            transition={modalPop.transition}
+            style={{
+              background: 'var(--card-bg)',
+              width: '400px',
+              padding: 'var(--space-8)',
+              borderRadius: 'var(--radius-2xl)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-xl)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-5)' }}>
+              <div style={{ background: config.bg, color: config.color, padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', display: 'flex' }}>
+                <AlertTriangle size={24} />
+              </div>
+              <Button variant="ghost" size="sm" onClick={onCancel} icon={<X size={20} />} />
+            </div>
 
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {title}
-                        </h3>
-                        <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', lineHeight: 1.5, fontSize: '0.95rem' }}>
-                            {message}
-                        </p>
+            {/* Content */}
+            <h3 style={{ margin: '0 0 var(--space-2)', fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-extrabold)', color: 'var(--text-main)' }}>
+              {title}
+            </h3>
+            <p style={{ margin: '0 0 var(--space-6)', color: 'var(--text-muted)', lineHeight: 'var(--leading-normal)', fontSize: 'var(--text-base)' }}>
+              {message}
+            </p>
 
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <button onClick={onCancel} style={cancelBtnStyle}>
-                                {cancelLabel}
-                            </button>
-                            <button
-                                onClick={onConfirm}
-                                style={{
-                                    ...confirmBtnStyle,
-                                    background: getVariantColor()
-                                }}
-                            >
-                                {confirmLabel}
-                            </button>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-        </AnimatePresence>
-    );
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <Button variant="secondary" onClick={onCancel} style={{ flex: 1, padding: 'var(--space-3)' }}>
+                {cancelLabel}
+              </Button>
+              <Button
+                onClick={onConfirm}
+                style={{
+                  flex: 1,
+                  padding: 'var(--space-3)',
+                  background: config.color,
+                  color: '#ffffff',
+                  fontWeight: 'var(--weight-bold)',
+                }}
+              >
+                {confirmLabel}
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
-
-const overlayStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.4)',
-    backdropFilter: 'blur(4px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 3000
-};
-
-const modalStyle: React.CSSProperties = {
-    background: 'var(--card-bg)',
-    width: '400px',
-    padding: '32px',
-    borderRadius: '24px',
-    border: '1px solid var(--border)',
-    boxShadow: 'var(--shadow-lg)'
-};
-
-const closeBtnStyle: React.CSSProperties = {
-    background: 'none',
-    border: 'none',
-    color: 'var(--text-muted)',
-    cursor: 'pointer',
-    padding: '4px'
-};
-
-const cancelBtnStyle: React.CSSProperties = {
-    flex: 1,
-    padding: '12px',
-    background: 'var(--bg)',
-    border: '1px solid var(--border)',
-    borderRadius: '12px',
-    fontWeight: 700,
-    color: 'var(--text-main)',
-    cursor: 'pointer',
-    transition: 'var(--transition)'
-};
-
-const confirmBtnStyle: React.CSSProperties = {
-    flex: 1,
-    padding: '12px',
-    border: 'none',
-    borderRadius: '12px',
-    fontWeight: 700,
-    color: 'white',
-    cursor: 'pointer',
-    transition: 'var(--transition)'
-};

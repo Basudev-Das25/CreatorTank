@@ -168,6 +168,41 @@ export async function initDB(): Promise<void> {
       );
     `);
 
+    // Inbox Table (uncategorized quick captures)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS inbox_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        note TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Checklists Table (per idea, production checklist)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS checklists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER NOT NULL,
+        label TEXT NOT NULL,
+        position INTEGER NOT NULL DEFAULT 0,
+        is_checked INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (idea_id) REFERENCES ideas (id) ON DELETE CASCADE
+      );
+    `);
+
+    // Workspace Notes Table (per idea, multiple tab types)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS workspace_notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        idea_id INTEGER NOT NULL,
+        tab_type TEXT NOT NULL,
+        content TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(idea_id, tab_type),
+        FOREIGN KEY (idea_id) REFERENCES ideas (id) ON DELETE CASCADE
+      );
+    `);
+
     // Initialize Default Settings
     const defaultSettings = [
       { key: 'shortcut_search', value: 'Ctrl+K' },
