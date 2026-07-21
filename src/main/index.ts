@@ -568,6 +568,259 @@ SELECT
         }
     });
 
+    // --- INBOX ---
+    ipcMain.handle("inbox:create", (_, { title, note }) => {
+        try {
+            const result = runRun("INSERT INTO inbox_items (title, note) VALUES (?, ?)", [title, note || null]);
+            return { success: true, id: result.id };
+        } catch (error) {
+            console.error("Failed to create inbox item:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("inbox:get-all", () => {
+        try {
+            const rows = runAll("SELECT * FROM inbox_items ORDER BY created_at DESC");
+            return { success: true, data: rows };
+        } catch (error) {
+            console.error("Failed to get inbox items:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("inbox:update", (_, { id, ...updates }) => {
+        try {
+            const keys = Object.keys(updates);
+            if (keys.length === 0) return { success: true };
+            const setClause = keys.map(k => `${k} = ?`).join(", ");
+            const values = keys.map(k => updates[k]);
+            runRun(`UPDATE inbox_items SET ${setClause} WHERE id = ?`, [...values, id]);
+            return { success: true };
+        } catch (error) {
+            console.error("Failed to update inbox item:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("inbox:delete", (_, id) => {
+        try {
+            runRun("DELETE FROM inbox_items WHERE id = ?", [id]);
+            return { success: true };
+        } catch (error) {
+            console.error("Failed to delete inbox item:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("inbox:convert", async (_, { id, projectId }) => {
+        try {
+            const item = runGet("SELECT * FROM inbox_items WHERE id = ?", [id]);
+            if (!item) return { success: false, error: "Inbox item not found" };
+            const ideaResult = runRun(
+                "INSERT INTO ideas (project_id, title, description, priority) VALUES (?, ?, ?, ?)",
+                [projectId, item.title, item.note || '', 'medium']
+            );
+            runRun("DELETE FROM inbox_items WHERE id = ?", [id]);
+            return { success: true, ideaId: ideaResult.id };
+        } catch (error) {
+            console.error("Failed to convert inbox item:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    // --- CHECKLISTS ---
+    ipcMain.handle("checklists:get-by-idea", (_, ideaId) => {
+        try {
+            const rows = runAll("SELECT * FROM checklists WHERE idea_id = ? ORDER BY position ASC", [ideaId]);
+            return { success: true, data: rows };
+        } catch (error) {
+            console.error("Failed to get checklists:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("checklists:create", (_, { ideaId, label, position }) => {
+        try {
+            const result = runRun(
+                "INSERT INTO checklists (idea_id, label, position) VALUES (?, ?, ?)",
+                [ideaId, label, position || 0]
+            );
+            return { success: true, id: result.id };
+        } catch (error) {
+            console.error("Failed to create checklist item:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("checklists:update", (_, { id, ...updates }) => {
+        try {
+            const keys = Object.keys(updates);
+            if (keys.length === 0) return { success: true };
+            const setClause = keys.map(k => `${k} = ?`).join(", ");
+            const values = keys.map(k => updates[k]);
+            runRun(`UPDATE checklists SET ${setClause} WHERE id = ?`, [...values, id]);
+            return { success: true };
+        } catch (error) {
+            console.error("Failed to update checklist item:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("checklists:delete", (_, id) => {
+        try {
+            runRun("DELETE FROM checklists WHERE id = ?", [id]);
+            return { success: true };
+        } catch (error) {
+            console.error("Failed to delete checklist item:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("checklists:init-defaults", (_, ideaId) => {
+        try {
+            const existing = runAll("SELECT id FROM checklists WHERE idea_id = ?", [ideaId]);
+            if (existing.length > 0) return { success: true };
+            const defaults = [
+                'Research', 'Script', 'Thumbnail', 'Recording', 'Editing',
+                'Review', 'Upload', 'SEO', 'Publish', 'Social Promotion'
+            ];
+            defaults.forEach((label, i) => {
+                runRun("INSERT INTO checklists (idea_id, label, position) VALUES (?, ?, ?)", [ideaId, label, i]);
+            });
+            return { success: true };
+        } catch (error) {
+            console.error("Failed to init default checklists:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    // --- WORKSPACE NOTES ---
+    ipcMain.handle("workspace-notes:get", (_, { ideaId, tabType }) => {
+        try {
+            const row = runGet("SELECT * FROM workspace_notes WHERE idea_id = ? AND tab_type = ?", [ideaId, tabType]);
+            return { success: true, data: row };
+        } catch (error) {
+            console.error("Failed to get workspace notes:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle("workspace-notes:save", (_, { ideaId, tabType, content }) => {
+        try {
+            runRun(
+                "INSERT OR REPLACE INTO workspace_notes (idea_id, tab_type, content, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+                [ideaId, tabType, content]
+            );
+            return { success: true };
+        } catch (error) {
+            console.error("Failed to save workspace notes:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    // --- DASHBOARD ---
+    ipcMain.handle("dashboard:stats", () => {
+        try {
+            const now = new Date();
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            const today = now.toISOString().split('T')[0];
+
+            const totalProjects = runGet("SELECT COUNT(*) as count FROM projects");
+            const activeProjects = runGet("SELECT COUNT(DISTINCT project_id) as count FROM ideas WHERE workflow_stage != 'published'");
+            const ideasThisWeek = runGet("SELECT COUNT(*) as count FROM ideas WHERE created_at >= ?", [weekAgo]);
+            const scriptsWritten = runGet("SELECT COUNT(*) as count FROM scripts");
+            const wordsWritten = runGet("SELECT COALESCE(SUM(word_count), 0) as total FROM scripts");
+            const publishedCount = runGet("SELECT COUNT(*) as count FROM ideas WHERE workflow_stage = 'published'");
+
+            const overdueItems = runAll(`
+                SELECT i.id, i.title, i.workflow_stage, p.name as project_name
+                FROM ideas i
+                JOIN projects p ON i.project_id = p.id
+                WHERE i.scheduled_date < ? AND i.workflow_stage NOT IN ('ready', 'published')
+                ORDER BY i.scheduled_date ASC
+                LIMIT 10
+            `, [today]);
+
+            const todayItems = runAll(`
+                SELECT i.id, i.title, i.workflow_stage, i.scheduled_time, p.name as project_name
+                FROM ideas i
+                JOIN projects p ON i.project_id = p.id
+                WHERE i.scheduled_date = ?
+                ORDER BY i.scheduled_time ASC
+            `, [today]);
+
+            const inProgressItems = runAll(`
+                SELECT i.id, i.title, i.workflow_stage, p.name as project_name
+                FROM ideas i
+                JOIN projects p ON i.project_id = p.id
+                WHERE i.workflow_stage IN ('writing', 'recording', 'editing')
+                ORDER BY i.updated_at DESC
+                LIMIT 10
+            `);
+
+            const upcomingSchedule = runAll(`
+                SELECT i.id, i.title, i.scheduled_date, i.scheduled_time, p.name as project_name, 'idea' as type
+                FROM ideas i
+                JOIN projects p ON i.project_id = p.id
+                WHERE i.scheduled_date >= ? AND i.scheduled_date <= date(?, '+7 days')
+                UNION ALL
+                SELECT p.id, p.name as title, p.scheduled_date, p.scheduled_time, p.name as project_name, 'project' as type
+                FROM projects p
+                WHERE p.scheduled_date >= ? AND p.scheduled_date <= date(?, '+7 days')
+                ORDER BY scheduled_date ASC, scheduled_time ASC
+                LIMIT 10
+            `, [today, today, today, today]);
+
+            const recentProjects = runAll(`
+                SELECT p.*,
+                    (SELECT COUNT(*) FROM ideas i WHERE i.project_id = p.id) as idea_count,
+                    (SELECT MAX(COALESCE(s.updated_at, i.created_at, p.created_at))
+                     FROM ideas i LEFT JOIN scripts s ON s.idea_id = i.id
+                     WHERE i.project_id = p.id) as last_activity
+                FROM projects p
+                ORDER BY last_activity DESC
+                LIMIT 5
+            `);
+
+            const recentlyEdited = runAll(`
+                SELECT i.id, i.title, i.updated_at, p.name as project_name, 'idea' as type
+                FROM ideas i
+                JOIN projects p ON i.project_id = p.id
+                WHERE i.updated_at >= ?
+                UNION ALL
+                SELECT s.id, i.title, s.updated_at, p.name as project_name, 'script' as type
+                FROM scripts s
+                JOIN ideas i ON s.idea_id = i.id
+                JOIN projects p ON i.project_id = p.id
+                WHERE s.updated_at >= ?
+                ORDER BY updated_at DESC
+                LIMIT 10
+            `, [weekAgo, weekAgo]);
+
+            return {
+                success: true,
+                data: {
+                    totalProjects: totalProjects?.count || 0,
+                    activeProjects: activeProjects?.count || 0,
+                    ideasThisWeek: ideasThisWeek?.count || 0,
+                    scriptsWritten: scriptsWritten?.count || 0,
+                    wordsWritten: wordsWritten?.total || 0,
+                    publishedCount: publishedCount?.count || 0,
+                    overdueItems,
+                    todayItems,
+                    inProgressItems,
+                    upcomingSchedule,
+                    recentProjects,
+                    recentlyEdited
+                }
+            };
+        } catch (error) {
+            console.error("Failed to get dashboard stats:", error);
+            return { success: false, error: String(error) };
+        }
+    });
+
     // Settings
     ipcMain.handle("settings:get-all", () => {
         try {
