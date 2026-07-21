@@ -67,6 +67,10 @@ function App(): JSX.Element {
   const [splitWidth, setSplitWidth] = useState(50);
   const [resizingSplit, setResizingSplit] = useState(false);
 
+  // Refresh trigger for Dashboard
+  const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
+  const refreshDashboard = () => setDashboardRefreshKey(prev => prev + 1);
+
   // UI state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
@@ -109,6 +113,10 @@ function App(): JSX.Element {
       navigatePrimary(view, project, idea);
     } else {
       navigateSecondary(view, project, idea);
+    }
+    // Refresh dashboard when navigating to it
+    if (view === 'dashboard') {
+      refreshDashboard();
     }
   }, [activePanel, navigatePrimary, navigateSecondary]);
 
@@ -337,6 +345,7 @@ function App(): JSX.Element {
               }
             });
           }}
+          refreshKey={dashboardRefreshKey}
         />
       );
     }

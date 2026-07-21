@@ -15,9 +15,10 @@ interface DashboardProps {
   onNavigate: (view: 'project' | 'calendar' | 'workflow' | 'inbox') => void;
   onSelectProject: (project: any) => void;
   onSelectIdea: (idea: any) => void;
+  refreshKey?: number;
 }
 
-export function Dashboard({ onNavigate, onSelectProject, onSelectIdea }: DashboardProps) {
+export function Dashboard({ onNavigate, onSelectProject, onSelectIdea, refreshKey }: DashboardProps) {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +31,7 @@ export function Dashboard({ onNavigate, onSelectProject, onSelectIdea }: Dashboa
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [refreshKey]);
 
   if (loading) return <LoadingSpinner />;
   if (!stats) return <EmptyState icon={<Rocket size={24} />} title="Welcome to CreatorTank" />;
