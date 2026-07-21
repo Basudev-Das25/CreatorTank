@@ -1,214 +1,196 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Calendar, PanelLeft, RefreshCw } from 'lucide-react';
+import { Button } from './ui/Button';
+import { Badge } from './ui/Badge';
+import { LoadingSpinner } from './ui/LoadingSpinner';
+import { listItem } from '../lib/animations';
 
 interface Idea {
-    id: number;
-    project_id: number;
-    title: string;
-    description: string;
-    workflow_stage: string;
-    priority: string;
-    project_name?: string;
-    scheduled_date?: string;
+  id: number;
+  project_id: number;
+  title: string;
+  description: string;
+  workflow_stage: string;
+  priority: string;
+  project_name?: string;
+  scheduled_date?: string;
 }
 
 const STAGES = [
-    { id: 'idea', label: 'Idea' },
-    { id: 'writing', label: 'Writing' },
-    { id: 'recording', label: 'Recording' },
-    { id: 'editing', label: 'Editing' },
-    { id: 'ready', label: 'Ready' },
-    { id: 'published', label: 'Published' }
+  { id: 'idea', label: 'Idea' },
+  { id: 'writing', label: 'Writing' },
+  { id: 'recording', label: 'Recording' },
+  { id: 'editing', label: 'Editing' },
+  { id: 'ready', label: 'Ready' },
+  { id: 'published', label: 'Published' },
 ];
 
 interface WorkflowBoardProps {
-    onOpenIdea: (idea: any) => void;
-    onScheduleItem: (item: any) => void;
-    isSidebarCollapsed: boolean;
-    onToggleSidebar: () => void;
+  onOpenIdea: (idea: any) => void;
+  onScheduleItem: (item: any) => void;
+  isSidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
 }
 
 export function WorkflowBoard({ onOpenIdea, onScheduleItem, isSidebarCollapsed, onToggleSidebar }: WorkflowBoardProps) {
-    const [ideas, setIdeas] = useState<Idea[]>([]);
-    const [loading, setLoading] = useState(true);
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    const loadAllIdeas = async () => {
-        setLoading(true);
-        // We'll need a new IPC handler for getting ALL ideas if we want a global board
-        // For now, let's use getScheduledIdeas as a base or implement ideas:get-all
-        const res = await window.api.getScheduledIdeas();
-        if (res.success) {
-            // Only show ideas in the workflow board
-            setIdeas((res.data || []).filter((item: any) => item.type === 'idea'));
-        }
-        setLoading(false);
-    };
+  const loadAllIdeas = async () => {
+    setLoading(true);
+    const res = await (window as any).api.getScheduledIdeas();
+    if (res.success) {
+      setIdeas((res.data || []).filter((item: any) => item.type === 'idea'));
+    }
+    setLoading(false);
+  };
 
-    useEffect(() => {
-        loadAllIdeas();
-    }, []);
+  useEffect(() => {
+    loadAllIdeas();
+  }, []);
 
-    const moveStage = async (ideaId: number, currentStage: string, direction: 'left' | 'right') => {
-        const currentIndex = STAGES.findIndex(s => s.id === currentStage);
-        const nextIndex = direction === 'right' ? currentIndex + 1 : currentIndex - 1;
+  const moveStage = async (ideaId: number, currentStage: string, direction: 'left' | 'right') => {
+    const currentIndex = STAGES.findIndex((s) => s.id === currentStage);
+    const nextIndex = direction === 'right' ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex >= 0 && nextIndex < STAGES.length) {
+      const nextStage = STAGES[nextIndex].id;
+      const res = await (window as any).api.updateIdea(ideaId, { workflow_stage: nextStage });
+      if (res.success) loadAllIdeas();
+    }
+  };
 
-        if (nextIndex >= 0 && nextIndex < STAGES.length) {
-            const nextStage = STAGES[nextIndex].id;
-            // @ts-ignore
-            const res = await window.api.updateIdea(ideaId, { workflow_stage: nextStage });
-            if (res.success) {
-                loadAllIdeas();
-            }
-        }
-    };
+  if (loading) return <LoadingSpinner />;
 
-    if (loading) return <div style={{ padding: "40px", textAlign: "center" }}>Loading Workflow...</div>;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
+      {/* Header */}
+      <div
+        style={{
+          padding: 'var(--space-5) var(--space-8)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'var(--sidebar-bg)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+          {isSidebarCollapsed && (
+            <Button variant="ghost" size="sm" onClick={onToggleSidebar} icon={<PanelLeft size={18} />} title="Show Sidebar (Ctrl+B)" />
+          )}
+          <h2 style={{ margin: 0, fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-bold)', color: 'var(--text-main)' }}>
+            Workflow Board
+          </h2>
+        </div>
+        <Button variant="primary" size="sm" onClick={loadAllIdeas} icon={<RefreshCw size={14} />}>
+          Refresh
+        </Button>
+      </div>
 
-    return (
-        <div style={boardWrapperStyle}>
-            <div style={boardHeaderStyle}>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    {isSidebarCollapsed && (
-                        <button
-                            onClick={onToggleSidebar}
-                            style={sidebarToggleBtnStyle}
-                            title="Show Sidebar (Ctrl+B)"
+      {/* Board */}
+      <div style={{ display: 'flex', gap: 'var(--space-5)', padding: 'var(--space-6)', overflowX: 'auto', flex: 1, alignItems: 'flex-start' }}>
+        {STAGES.map((stage) => {
+          const stageIdeas = ideas.filter((i) => (i.workflow_stage || 'idea') === stage.id);
+          return (
+            <div
+              key={stage.id}
+              style={{
+                width: '280px',
+                minWidth: '280px',
+                background: 'var(--glass-bg)',
+                backdropFilter: 'blur(var(--glass-blur))',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                flexDirection: 'column',
+                maxHeight: '100%',
+                border: '1px solid var(--glass-border)',
+                transition: 'var(--transition-fast)',
+              }}
+            >
+              {/* Column Header */}
+              <div
+                style={{
+                  padding: 'var(--space-4)',
+                  fontWeight: 'var(--weight-bold)',
+                  fontSize: 'var(--text-base)',
+                  color: 'var(--text-main)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderBottom: '2px solid var(--border)',
+                }}
+              >
+                {stage.label}
+                <Badge variant="muted" size="sm">{stageIdeas.length}</Badge>
+              </div>
+
+              {/* Column Content */}
+              <div style={{ padding: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', overflowY: 'auto', flex: 1 }}>
+                <AnimatePresence>
+                  {stageIdeas.map((idea) => (
+                    <motion.div
+                      key={idea.id}
+                      layout
+                      initial={listItem.initial}
+                      animate={listItem.animate}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      whileHover={{ y: -2, boxShadow: 'var(--shadow-md)' }}
+                      onClick={() => onOpenIdea(idea)}
+                      style={{
+                        background: 'var(--card-bg)',
+                        padding: 'var(--space-4)',
+                        borderRadius: 'var(--radius-sm)',
+                        boxShadow: 'var(--shadow-sm)',
+                        cursor: 'pointer',
+                        border: '1px solid var(--border)',
+                      }}
+                    >
+                      <div style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-base)', color: 'var(--text-main)', marginBottom: 'var(--space-3)' }}>
+                        {idea.title}
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            moveStage(idea.id, idea.workflow_stage || 'idea', 'left');
+                          }}
+                          disabled={STAGES.findIndex((s) => s.id === (idea.workflow_stage || 'idea')) === 0}
+                          icon={<ChevronLeft size={14} />}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onScheduleItem(idea);
+                          }}
+                          icon={<Calendar size={12} />}
+                          style={{ flex: 1, justifyContent: 'center' }}
                         >
-                            ☰
-                        </button>
-                    )}
-                    <h2 style={{ margin: 0 }}>Workflow Board</h2>
-                </div>
-                <button onClick={loadAllIdeas} style={refreshBtnStyle}>Refresh</button>
+                          {idea.scheduled_date || 'Schedule'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            moveStage(idea.id, idea.workflow_stage || 'idea', 'right');
+                          }}
+                          disabled={STAGES.findIndex((s) => s.id === (idea.workflow_stage || 'idea')) === STAGES.length - 1}
+                          icon={<ChevronRight size={14} />}
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
             </div>
-
-            <div style={boardGridStyle}>
-                {STAGES.map(stage => (
-                    <div key={stage.id} style={columnStyle}>
-                        <div style={columnHeaderStyle}>
-                            {stage.label}
-                            <span style={countBadgeStyle}>
-                                {ideas.filter(i => (i.workflow_stage || 'idea') === stage.id).length}
-                            </span>
-                        </div>
-
-                        <div style={columnContentStyle}>
-                            {ideas
-                                .filter(i => (i.workflow_stage || 'idea') === stage.id)
-                                .map(idea => (
-                                    <div key={idea.id} style={cardStyle} onClick={() => onOpenIdea(idea)}>
-                                        <div style={cardTitleStyle}>{idea.title}</div>
-                                        <div style={cardActionsStyle}>
-                                            <button
-                                                disabled={STAGES.findIndex(s => s.id === (idea.workflow_stage || 'idea')) === 0}
-                                                onClick={(e) => { e.stopPropagation(); moveStage(idea.id, idea.workflow_stage || 'idea', 'left'); }}
-                                                style={moveBtnStyle}
-                                                title="Move Left"
-                                            >
-                                                ←
-                                            </button>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); onScheduleItem(idea); }}
-                                                style={{ ...moveBtnStyle, flex: 2 }}
-                                                title="Set Schedule"
-                                            >
-                                                📅 {idea.scheduled_date ? idea.scheduled_date : "Schedule"}
-                                            </button>
-                                            <button
-                                                disabled={STAGES.findIndex(s => s.id === (idea.workflow_stage || 'idea')) === STAGES.length - 1}
-                                                onClick={(e) => { e.stopPropagation(); moveStage(idea.id, idea.workflow_stage || 'idea', 'right'); }}
-                                                style={moveBtnStyle}
-                                                title="Move Right"
-                                            >
-                                                →
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            }
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div >
-    );
+          );
+        })}
+      </div>
+    </div>
+  );
 }
-
-const boardWrapperStyle: React.CSSProperties = {
-    display: "flex", flexDirection: "column", height: "100%", background: "var(--bg)"
-};
-
-const boardHeaderStyle: React.CSSProperties = {
-    padding: "24px 32px", display: "flex", justifyContent: "space-between",
-    alignItems: "center", background: "var(--sidebar-bg)", borderBottom: "1px solid var(--border)"
-};
-
-const boardGridStyle: React.CSSProperties = {
-    display: "flex", gap: "16px", padding: "24px", overflowX: "auto", flex: 1, alignItems: "flex-start"
-};
-
-const columnStyle: React.CSSProperties = {
-    width: "280px", minWidth: "280px", background: "var(--glass)",
-    backdropFilter: "blur(8px)", borderRadius: "12px",
-    display: "flex", flexDirection: "column", maxHeight: "100%", border: "1px solid var(--glass-border)",
-    transition: "var(--transition)", boxShadow: "inset 0 0 0 1px var(--glass-border)"
-};
-
-const columnHeaderStyle: React.CSSProperties = {
-    padding: "16px", fontWeight: 700, fontSize: "0.9rem", color: "var(--text-main)",
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    borderBottom: "2px solid var(--border)"
-};
-
-const countBadgeStyle: React.CSSProperties = {
-    background: "var(--bg)", padding: "2px 8px", borderRadius: "10px",
-    fontSize: "0.75rem", color: "var(--text-muted)"
-};
-
-const columnContentStyle: React.CSSProperties = {
-    padding: "12px", display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto"
-};
-
-const cardStyle: React.CSSProperties = {
-    background: "var(--card-bg)", padding: "16px", borderRadius: "10px",
-    boxShadow: "var(--shadow)", cursor: "pointer",
-    border: "1px solid var(--glass-border)", transition: "var(--transition)"
-};
-
-const cardTitleStyle: React.CSSProperties = {
-    fontWeight: 600, fontSize: "0.9rem", color: "var(--text-main)", marginBottom: "4px"
-};
-
-/* const cardMetaStyle: React.CSSProperties = {
-    fontSize: "0.75rem", color: "var(--text-muted)"
-}; */
-
-const cardActionsStyle: React.CSSProperties = {
-    marginTop: "12px", display: "flex", gap: "8px"
-};
-
-const moveBtnStyle: React.CSSProperties = {
-    flex: 1, padding: "4px", background: "var(--bg)", border: "1px solid var(--border)",
-    borderRadius: "4px", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-main)",
-    transition: "var(--transition)"
-};
-
-const refreshBtnStyle: React.CSSProperties = {
-    padding: "8px 16px", background: "var(--primary)", color: "white",
-    border: "none", borderRadius: "6px", fontWeight: 600, cursor: "pointer"
-};
-
-const sidebarToggleBtnStyle: React.CSSProperties = {
-    background: "var(--card-bg)",
-    border: "1px solid var(--border)",
-    borderRadius: "6px",
-    width: "36px",
-    height: "36px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontSize: "1.2rem",
-    color: "var(--text-main)",
-    boxShadow: "var(--shadow)",
-    transition: "var(--transition)"
-};
