@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PanelRight } from 'lucide-react';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { Dashboard } from './components/Dashboard';
+import { ProjectList } from './components/ProjectList';
 import { IdeaPanel } from './components/IdeaPanel';
 import { ContentWorkspace } from './components/ContentWorkspace';
 import { InboxPanel } from './components/InboxPanel';
@@ -379,28 +380,18 @@ function App(): JSX.Element {
           />
         );
       }
-      // No project selected, show dashboard
+      // No project selected, show project list
       return (
-        <Dashboard
-          onNavigate={setView}
+        <ProjectList
           onSelectProject={(p) => {
             setProject(p);
             setIdea(null);
-            setView('project');
           }}
-          onSelectIdea={(i) => {
-            const projectsRes = (window as any).api.getAllProjects();
-            projectsRes.then((res: any) => {
-              if (res.success && res.data) {
-                const project = res.data.find((p: any) => p.id === i.project_id);
-                if (project) {
-                  setProject(project);
-                  setIdea(i);
-                  setView('project');
-                }
-              }
-            });
+          onConfirmDelete={(title, message, onConfirm) => {
+            setConfirmState({ isOpen: true, title, message, onConfirm });
           }}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
       );
     }
@@ -479,22 +470,11 @@ function App(): JSX.Element {
         }}
       >
         <ProjectSidebar
-          onSelectProject={(p) => {
-            navigateActive('project', p, null);
-          }}
-          selectedProjectId={activePanel === 'primary' ? primaryPanel.project?.id : secondaryPanel.project?.id}
           onOpenTools={() => setIsToolsOpen(true)}
           currentView={activePanel === 'primary' ? primaryPanel.view : secondaryPanel.view}
           onViewChange={(v) => navigateActive(v)}
-          onScheduleItem={(item) => {
-            setItemToSchedule(item);
-            setIsScheduleDialogOpen(true);
-          }}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          onConfirmDelete={(title: string, message: string, onConfirm: () => void) => {
-            setConfirmState({ isOpen: true, title, message, onConfirm });
-          }}
         />
       </div>
 

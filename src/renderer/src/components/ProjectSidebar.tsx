@@ -1,112 +1,26 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  LayoutDashboard, Calendar, BarChart3, Plus, Search,
-  Trash2, Heart, Settings, Folder, Youtube, Instagram,
-  Mic, FileText, PanelLeftClose, Home, Inbox,
+  LayoutDashboard, Calendar, BarChart3, Settings,
+  Folder, PanelLeftClose, Home, Inbox,
 } from 'lucide-react';
 import { Button } from './ui/Button';
-import { Input } from './ui/Input';
-import { GlassPanel } from './ui/GlassPanel';
-import { SectionHeader } from './ui/SectionHeader';
 import { SIDEBAR_COLLAPSED_WIDTH, SIDEBAR_EXPANDED_WIDTH } from '../lib/constants';
-import { listItem } from '../lib/animations';
-
-interface Project {
-  id: number;
-  name: string;
-  platform: string;
-  idea_count?: number;
-  last_activity?: string;
-}
 
 interface ProjectSidebarProps {
-  onSelectProject: (project: Project | null) => void;
-  selectedProjectId?: number;
   onOpenTools: () => void;
   currentView: 'dashboard' | 'project' | 'inbox' | 'calendar' | 'workflow';
   onViewChange: (view: 'dashboard' | 'project' | 'inbox' | 'calendar' | 'workflow') => void;
-  onScheduleItem: (item: any) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  onConfirmDelete: (title: string, message: string, onConfirm: () => void) => void;
 }
 
-const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  YouTube: <Youtube size={14} />,
-  Instagram: <Instagram size={14} />,
-  Podcast: <Mic size={14} />,
-  Blog: <FileText size={14} />,
-  Custom: <Folder size={14} />,
-};
-
 export function ProjectSidebar({
-  onSelectProject,
-  selectedProjectId,
   onOpenTools,
   currentView,
   onViewChange,
   isCollapsed,
   onToggleCollapse,
-  onConfirmDelete,
 }: ProjectSidebarProps) {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectPlatform, setNewProjectPlatform] = useState('YouTube');
-  const [showDonateStatus, setShowDonateStatus] = useState(false);
-
-  const loadProjects = async () => {
-    const res = await (window as any).api.getAllProjects();
-    if (res.success) {
-      setProjects(res.data || []);
-    }
-  };
-
-  useEffect(() => {
-    loadProjects();
-
-    // Auto-collapse sidebar on narrow windows
-    const handleResize = () => {
-      if (window.innerWidth < 768 && !isCollapsed) {
-        onToggleCollapse();
-      }
-    };
-    handleResize(); // Check on mount
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleCreate = async () => {
-    if (!newProjectName.trim()) return;
-    const res = await (window as any).api.createProject(newProjectName, newProjectPlatform);
-    if (res.success) {
-      setNewProjectName('');
-      loadProjects();
-      if (res.id) {
-        onSelectProject({ id: res.id, name: newProjectName, platform: newProjectPlatform });
-        onViewChange('project');
-      }
-    }
-  };
-
-  const handleDelete = async (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onConfirmDelete(
-      'Delete Project',
-      'Are you sure you want to delete this project and all its associated ideas? This action cannot be undone.',
-      async () => {
-        await (window as any).api.deleteProject(id);
-        if (selectedProjectId === id) onSelectProject(null);
-        loadProjects();
-      }
-    );
-  };
-
-  const filteredProjects = projects.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const navItems = [
     { id: 'dashboard' as const, icon: <Home size={18} />, label: 'Dashboard' },
     { id: 'inbox' as const, icon: <Inbox size={18} />, label: 'Inbox' },
@@ -142,7 +56,7 @@ export function ProjectSidebar({
           position: 'relative',
         }}
       >
-        {/* Collapsed state: Logo centered, toggle button top-right */}
+        {/* Collapsed state: Logo centered */}
         {isCollapsed && (
           <div
             style={{
@@ -276,156 +190,8 @@ export function ProjectSidebar({
         ))}
       </div>
 
-      {/* Divider */}
-      <div
-        style={{
-          height: '1px',
-          background: 'var(--border)',
-          margin: isCollapsed ? 'var(--space-3) var(--space-3)' : 'var(--space-3) var(--space-4)',
-        }}
-      />
-
-      {/* Project List */}
-      {!isCollapsed && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-        >
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 var(--space-3) var(--space-6)' }}>
-            {/* New Project Form */}
-            <div style={{ marginBottom: 'var(--space-4)' }}>
-              <GlassPanel padding="var(--space-3)">
-                <Input
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-                  placeholder="Project name..."
-                  suffix={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCreate}
-                      icon={<Plus size={16} />}
-                      style={{ padding: '4px', color: 'var(--primary)' }}
-                    />
-                  }
-                />
-                <div style={{ display: 'flex', gap: 'var(--space-1)', marginTop: 'var(--space-2)' }}>
-                  {['YouTube', 'Instagram', 'Podcast', 'Blog', 'Custom'].map((p) => (
-                    <Button
-                      key={p}
-                      variant={newProjectPlatform === p ? 'primary' : 'ghost'}
-                      size="sm"
-                      onClick={() => setNewProjectPlatform(p)}
-                      icon={PLATFORM_ICONS[p]}
-                      style={{ padding: '4px 8px', fontSize: 'var(--text-xs)' }}
-                    >
-                      {p}
-                    </Button>
-                  ))}
-                </div>
-              </GlassPanel>
-            </div>
-
-            {/* Search */}
-            <div style={{ marginBottom: 'var(--space-3)' }}>
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search projects..."
-                prefix={<Search size={14} />}
-              />
-            </div>
-
-            {/* Label */}
-            <div style={{ marginBottom: 'var(--space-2)', padding: '0 var(--space-1)' }}>
-              <SectionHeader>Projects</SectionHeader>
-            </div>
-
-            {/* Projects */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <AnimatePresence>
-                {filteredProjects.map((p) => (
-                  <motion.div
-                    layout
-                    key={p.id}
-                    initial={listItem.initial}
-                    animate={listItem.animate}
-                    exit={{ opacity: 0, x: -16 }}
-                    whileHover={{ backgroundColor: 'var(--card-bg-hover)' }}
-                    onClick={() => {
-                      onSelectProject(p);
-                      onViewChange('project');
-                    }}
-                    className="sidebar-item"
-                    style={{
-                      padding: 'var(--space-2) var(--space-3)',
-                      cursor: 'pointer',
-                      background: selectedProjectId === p.id ? 'var(--primary-light)' : 'transparent',
-                      borderRadius: 'var(--radius-sm)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      border: selectedProjectId === p.id ? '1px solid var(--primary-light)' : '1px solid transparent',
-                    }}
-                  >
-                    <div
-                      style={{
-                        overflow: 'hidden',
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-3)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          color: selectedProjectId === p.id ? 'var(--primary)' : 'var(--text-muted)',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {PLATFORM_ICONS[p.platform] || PLATFORM_ICONS.Custom}
-                      </div>
-                      <div style={{ overflow: 'hidden' }}>
-                        <div
-                          style={{
-                            fontWeight: 'var(--weight-semibold)',
-                            color: selectedProjectId === p.id ? 'var(--primary)' : 'var(--text-main)',
-                            whiteSpace: 'nowrap',
-                            textOverflow: 'ellipsis',
-                            overflow: 'hidden',
-                            fontSize: 'var(--text-base)',
-                          }}
-                        >
-                          {p.name}
-                        </div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                          {p.idea_count || 0} ideas
-                        </div>
-                      </div>
-                    </div>
-                    <div className="item-actions" style={{ display: 'flex', alignItems: 'center', opacity: 0 }}>
-                      <button
-                        onClick={(e) => handleDelete(p.id, e)}
-                        style={{
-                          padding: '4px',
-                          color: 'var(--danger)',
-                          border: 'none',
-                          background: 'none',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-        </motion.div>
-      )}
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
 
       {/* Footer */}
       <div
@@ -442,24 +208,6 @@ export function ProjectSidebar({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => {
-            setShowDonateStatus(true);
-            setTimeout(() => setShowDonateStatus(false), 3000);
-          }}
-          icon={<Heart size={16} fill={showDonateStatus ? 'var(--support)' : 'none'} />}
-          style={{
-            justifyContent: isCollapsed ? 'center' : 'flex-start',
-            color: 'var(--support)',
-            background: 'var(--support-bg)',
-            border: '1px solid rgba(244, 114, 182, 0.1)',
-            width: isCollapsed ? '36px' : '100%',
-          }}
-        >
-          {!isCollapsed && 'Support'}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
           onClick={onOpenTools}
           icon={<Settings size={16} />}
           style={{
@@ -471,11 +219,6 @@ export function ProjectSidebar({
           {!isCollapsed && 'Settings'}
         </Button>
       </div>
-
-      <style>{`
-        .sidebar-item:hover .item-actions { opacity: 1; }
-        .sidebar-item:hover { background: var(--card-bg-hover) !important; }
-      `}</style>
     </motion.div>
   );
 }
